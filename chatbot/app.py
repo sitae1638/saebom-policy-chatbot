@@ -51,6 +51,11 @@ if "history" not in st.session_state:
     st.session_state.history = []
 
 # ---------------- 머리말 ----------------
+# 배포 환경 상단 막대(Fork·GitHub)에 제목이 가리지 않도록 여백 확보, 휴대폰에서 제목 크기 축소
+st.markdown("""<style>
+.block-container {padding-top: 4rem;}
+@media (max-width: 640px) { h1 {font-size: 1.7rem !important;} }
+</style>""", unsafe_allow_html=True)
 st.title("📘 새봄테크 규정 챗봇")
 st.caption("근무·휴가·경비·출장·비품·구매·시설·보안 규정을 찾아 근거 조항과 함께 알려드립니다.")
 st.info("이 챗봇은 **연습용 가상 회사(새봄테크)** 의 규정으로 만들어졌습니다. 실제 회사 규정이 아닙니다.", icon="ℹ️")
