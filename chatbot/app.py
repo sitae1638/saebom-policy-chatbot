@@ -7,11 +7,22 @@
 """
 import os
 import streamlit as st
-from pipeline import Pipeline, STAGES
-from llm_answer import answer
-import scope_guard as G
+import hot_reload
 
 st.set_page_config(page_title="새봄테크 규정 챗봇", page_icon="📘", layout="centered")
+
+
+@st.cache_resource(show_spinner="규정 문서를 불러오는 중입니다... (처음이나 코드 수정 직후에는 1~2분 걸릴 수 있어요)")
+def get_engine(mode, stage, version):
+    from pipeline import Pipeline
+    return Pipeline(mode, stage)
+
+
+# 보조 코드가 바뀌었으면 검색 엔진을 비우고 새 코드로 다시 불러옴 (재부팅 불필요) — hot_reload.py 참고
+CODE_VERSION, RELOADED = hot_reload.check_and_reload(get_engine.clear)
+from pipeline import STAGES          # 재로딩 뒤에 불러와야 새 코드가 쓰임
+from llm_answer import answer
+import scope_guard as G
 
 DEV = st.query_params.get("dev") == "1"
 DEFAULT_MODE, DEFAULT_STAGE, DEFAULT_K = "embed", "v4", 3
@@ -28,11 +39,6 @@ def has_gemini_key():
     return bool(os.environ.get("GEMINI_API_KEY"))
 
 
-@st.cache_resource(show_spinner="규정 문서를 불러오는 중입니다... (처음 한 번만 1~2분 걸릴 수 있어요)")
-def get_engine(mode, stage):
-    return Pipeline(mode, stage)
-
-
 # ---------------- 설정 ----------------
 if DEV:
     with st.sidebar:
@@ -42,11 +48,12 @@ if DEV:
         provider = st.selectbox("답변 생성", ["none", "gemini", "ollama"], help="none=조항만 표시 / ollama는 내 PC에서만 동작")
         k = st.slider("근거 조항 수", 1, 5, DEFAULT_K)
         show_debug = st.checkbox("확장된 질문·판정 사유 보기", value=True)
+        st.caption(f"코드 버전 {CODE_VERSION}" + (" · 방금 새 코드로 다시 불러옴" if RELOADED else ""))
 else:
     mode, stage, k, show_debug = DEFAULT_MODE, DEFAULT_STAGE, DEFAULT_K, False
     provider = "gemini" if has_gemini_key() else "none"
 
-engine = get_engine(mode, stage)
+engine = get_engine(mode, stage, CODE_VERSION)
 if "history" not in st.session_state:
     st.session_state.history = []
 
