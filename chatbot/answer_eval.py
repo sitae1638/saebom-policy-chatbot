@@ -62,13 +62,14 @@ def run(set_name, engine, decide, answer, mode, stage, k=3, pace=6.0, progress=N
     import llm_answer
     rows, results = load(set_name), []
     for i, r in enumerate(rows, 1):
-        res = engine.search(r["질문"], k)
+        ctx = engine.search(r["질문"], max(k, llm_answer.ANSWER_CONTEXT_K))   # 앱과 동일: 답변엔 5개
+        res = ctx[:k]
         tier, why = decide(res, mode, stage)
         text, err = None, ""
         if tier != "거절":
             for attempt in range(4):
                 try:
-                    text = answer(r["질문"], res, "gemini")
+                    text = answer(r["질문"], ctx, "gemini")
                     break
                 except llm_answer.LLMError as e:
                     err = str(e)[:200]

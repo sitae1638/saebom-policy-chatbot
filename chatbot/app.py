@@ -137,12 +137,14 @@ def ask(q):
     """반환: (답변문장 또는 None, 검색결과, 판정, 사유, 답변생성 실패 여부)
     답변 문장 생성(LLM)이 실패하면(무료 한도 초과·네트워크 오류 등) 문장 없이 처리 →
     'LLM을 쓰지 않을 때'와 같은 화면(첫 조항 펼침)에 작은 안내만 덧붙임."""
-    res = engine.search(q, k)
-    tier, why = G.decide(res, mode, stage)
+    import llm_answer
+    ctx = engine.search(q, max(k, llm_answer.ANSWER_CONTEXT_K))   # 답변 생성용(5개)
+    res = ctx[:k]                                                 # 화면 표시용(3개) — 검색 순위는 동일
+    tier, why = G.decide(res, mode, stage)                        # 거절 판정은 1위 점수 기준이라 변화 없음
     text, failed = None, False
     if tier != "거절" and provider != "none":
         try:
-            text = answer(q, res, provider) or None
+            text = answer(q, ctx, provider) or None
             if DEV and provider == "gemini":
                 import llm_answer
                 why += f" / 답변 모델: {llm_answer.LAST_MODEL}"
