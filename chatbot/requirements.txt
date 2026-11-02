@@ -1,0 +1,7 @@
+# Streamlit Community Cloud용 (CPU 전용 PyTorch로 용량 절약)
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+sentence-transformers>=3.0
+streamlit>=1.35
+kiwipiepy>=0.20
+numpy
