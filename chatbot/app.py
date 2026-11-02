@@ -67,13 +67,49 @@ if "history" not in st.session_state:
 
 # ---------------- 머리말 ----------------
 # 배포 환경 상단 막대(Fork·GitHub)에 제목이 가리지 않도록 여백 확보, 휴대폰에서 제목 크기 축소
-st.markdown("""<style>
-.block-container {padding-top: 4rem;}
-@media (max-width: 640px) { h1 {font-size: 1.7rem !important;} }
+# ---------------- 화면 디자인: 메신저형 · 초록 테마 (2026-11-02) ----------------
+# 말풍선은 Streamlit이 메시지에 붙이는 aria-label("Chat message from user/assistant")로 구분 → 업데이트에 비교적 안정적
+# 무료 배포 상단의 Fork·GitHub 막대와 하단 로고는 제거 불가
+GREEN, GREEN_DARK, GREEN_SOFT, BG = "#2F9E5A", "#23784A", "#EAF6EE", "#F4F8F5"
+st.markdown(f"""<style>
+.stApp {{ background: {BG}; }}
+.block-container {{ padding-top: 4rem; max-width: 760px; }}
+h1 {{ color: {GREEN_DARK}; font-size: 2rem !important; }}
+@media (max-width: 640px) {{ h1 {{ font-size: 1.6rem !important; }} }}
+
+/* 안내 배너 */
+.notice {{ background: {GREEN_SOFT}; border: 1px solid #CFE8D7; color: #24543A; border-radius: 12px;
+           padding: 10px 14px; font-size: 0.92rem; margin: 4px 0 18px; }}
+
+/* 공통: 메시지 줄 배경 없애기 */
+[data-testid="stChatMessage"] {{ background: transparent !important; padding: 4px 0; gap: 8px; }}
+
+/* 내 질문: 오른쪽 초록 말풍선, 아이콘 숨김 */
+[data-testid="stChatMessage"]:has([aria-label="Chat message from user"]) {{ justify-content: flex-end; }}
+[data-testid="stChatMessage"]:has([aria-label="Chat message from user"]) > div:first-child {{ display: none; }}
+[aria-label="Chat message from user"] {{
+    flex: 0 1 auto !important; max-width: 78%; margin-left: auto !important; margin-right: 0 !important; background: {GREEN}; color: #fff;
+    border-radius: 18px 18px 4px 18px; padding: 10px 16px; box-shadow: 0 1px 2px rgba(0,0,0,.08); }}
+[aria-label="Chat message from user"] p, [aria-label="Chat message from user"] * {{ color: #fff !important; margin: 0; }}
+
+/* 챗봇 답변: 왼쪽 흰 말풍선 */
+[aria-label="Chat message from assistant"] {{
+    flex: 1 1 auto; max-width: 92%; background: #fff; border: 1px solid #E2ECE5;
+    border-radius: 18px 18px 18px 4px; padding: 12px 16px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }}
+[aria-label="Chat message from assistant"] [data-testid="stExpander"] details {{ border-color: #DDEAE1; border-radius: 10px; }}
+[aria-label="Chat message from assistant"] [data-testid="stVerticalBlockBorderWrapper"] {{ border-color: #DDEAE1; }}
+
+/* 예시 질문 버튼: 둥근 칩 */
+[data-testid="stButton"] button {{ border-radius: 999px; border: 1px solid #CFE8D7; background: #fff; color: #24543A; }}
+[data-testid="stButton"] button:hover {{ border-color: {GREEN}; color: {GREEN_DARK}; background: {GREEN_SOFT}; }}
+
+/* 입력창 */
+[data-testid="stChatInput"] > div {{ border-radius: 24px; border: 1px solid #CFE8D7; background: #fff; }}
+[data-testid="stBottom"] > div {{ background: {BG}; }}
 </style>""", unsafe_allow_html=True)
 st.title("📘 새봄테크 규정 챗봇")
 st.caption("근무·휴가·경비·출장·비품·구매·시설·보안 규정을 찾아 근거 조항과 함께 알려드립니다.")
-st.info("이 챗봇은 **연습용 가상 회사(새봄테크)** 의 규정으로 만들어졌습니다. 실제 회사 규정이 아닙니다.", icon="ℹ️")
+st.markdown('<div class="notice">🌱 이 챗봇은 <b>연습용 가상 회사(새봄테크)</b>의 규정으로 만들어졌습니다. 실제 회사 규정이 아닙니다.</div>', unsafe_allow_html=True)
 
 
 # ---------------- 답변 평가 (개발자 모드) ----------------
@@ -157,7 +193,7 @@ def ask(q):
 
 # ---------------- 대화 ----------------
 for role, content in st.session_state.history:
-    with st.chat_message(role):
+    with st.chat_message(role, avatar=("🌱" if role == "assistant" else None)):
         if role == "user":
             st.write(content)
         else:
@@ -177,7 +213,7 @@ if q:
     st.session_state.history.append(("user", q))
     with st.chat_message("user"):
         st.write(q)
-    with st.chat_message("assistant"):
+    with st.chat_message("assistant", avatar="🌱"):
         if DEV and show_debug:
             st.caption("검색에 쓴 질문: " + engine.rewrite(q))
         with st.spinner("규정을 찾는 중..."):
