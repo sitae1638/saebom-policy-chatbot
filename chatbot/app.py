@@ -89,13 +89,26 @@ h1 {{ color: {GREEN_DARK}; font-size: 2rem !important; }}
 [data-testid="stChatMessage"]:has([aria-label="Chat message from user"]) > div:first-child {{ display: none; }}
 [aria-label="Chat message from user"] {{
     flex: 0 1 auto !important; max-width: 78%; margin-left: auto !important; margin-right: 0 !important; background: {GREEN}; color: #fff;
-    border-radius: 18px 18px 4px 18px; padding: 10px 16px; box-shadow: 0 1px 2px rgba(0,0,0,.08); }}
+    border-radius: 18px 18px 0 18px; padding: 10px 16px; box-shadow: 0 1px 2px rgba(0,0,0,.08);
+    position: relative; overflow: visible !important; }}
+/* 말풍선 꼬리 (2026-11-02 사용자 요청: 더 길게) — 오른쪽 아래로 14px 튀어나온 삼각형 */
+[aria-label="Chat message from user"]::after {{
+    content: ""; position: absolute; right: -13px; bottom: 0; width: 16px; height: 20px;
+    background: {GREEN}; clip-path: polygon(0 0, 0 100%, 100% 100%); }}
 [aria-label="Chat message from user"] p, [aria-label="Chat message from user"] * {{ color: #fff !important; margin: 0; }}
 
 /* 챗봇 답변: 왼쪽 흰 말풍선 */
 [aria-label="Chat message from assistant"] {{
     flex: 1 1 auto; max-width: 92%; background: #fff; border: 1px solid #E2ECE5;
-    border-radius: 18px 18px 18px 4px; padding: 12px 16px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }}
+    border-radius: 18px 18px 18px 0; padding: 12px 16px; box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    position: relative; overflow: visible !important; }}
+/* 답변 말풍선 꼬리 — 왼쪽 아래, 테두리색 삼각형 위에 흰 삼각형을 겹쳐 테두리선 유지 */
+[aria-label="Chat message from assistant"]::before {{
+    content: ""; position: absolute; left: -15px; bottom: -1px; width: 16px; height: 21px;
+    background: #E2ECE5; clip-path: polygon(100% 0, 100% 100%, 0 100%); }}
+[aria-label="Chat message from assistant"]::after {{
+    content: ""; position: absolute; left: -13px; bottom: 0; width: 14px; height: 19px;
+    background: #fff; clip-path: polygon(100% 0, 100% 100%, 0 100%); }}
 [aria-label="Chat message from assistant"] [data-testid="stExpander"] details {{ border-color: #DDEAE1; border-radius: 10px; }}
 [aria-label="Chat message from assistant"] [data-testid="stVerticalBlockBorderWrapper"] {{ border-color: #DDEAE1; }}
 
