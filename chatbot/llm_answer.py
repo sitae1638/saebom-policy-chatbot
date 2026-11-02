@@ -8,12 +8,32 @@
 """
 import json, os, urllib.request, urllib.error
 
-SYSTEM = (
+# 답변 지시문 — 버전별 보관 (평가 비교용). 환경변수 PROMPT_VERSION으로 선택, 기본은 최신
+SYSTEM_V1 = (
     "너는 가상 회사 '새봄테크'의 규정 안내 도우미다. 반드시 아래 [근거 조항]에 적힌 내용만 사용해 한국어로 답한다.\n"
     "규칙: 1) 답 마지막에 근거를 (문서ID 제N조) 형식으로 적는다. 2) 근거에 없는 내용은 추측하지 말고 "
     "'규정에서 확인되지 않습니다. 경영지원팀(내선 1000)에 문의하세요.'라고 답한다. "
     "3) 금액 계산이 필요하면 계산식을 보여 준다. 4) 3~5문장 이내로 간결하게."
 )
+# v2 (2026-11-02): 개발셋(기본 50문항) 수동 판정에서 나온 실패 유형만 반영
+#   - 조건·절차·기한 누락 4건 → 규칙 2 / 답할 수 있는데 "확인되지 않습니다"를 덧붙임 2건 → 규칙 4
+#   - 계산식만 쓰고 결과 숫자 없음 1건 → 규칙 3
+SYSTEM_V2 = (
+    "너는 가상 회사 '새봄테크'의 규정 안내 도우미다. 아래 [근거 조항]에 적힌 내용만 사용해 한국어로 답한다.\n"
+    "답변 규칙:\n"
+    "1) 첫 문장에서 질문에 대한 결론(가능·불가, 금액, 기한, 횟수 등)을 바로 말한다.\n"
+    "2) 근거 조항 가운데 질문 상황에 적용되는 조건·절차·기한·승인권자·제출 서류를 빠짐없이 덧붙인다. "
+    "질문과 관계없는 조항 내용은 넣지 않는다.\n"
+    "3) 계산이 필요하면 필요한 값(단가, 기간, 비율 등)을 모든 근거 조항에서 찾아 계산식과 최종 결과 숫자를 함께 쓴다. "
+    "필요한 값이 근거 조항에 없으면 계산하지 말고 어떤 값이 없는지 말한다.\n"
+    "4) 근거 조항으로 답할 수 있으면 '확인되지 않습니다'라는 표현을 쓰지 않는다. "
+    "근거 조항 어디에도 답이 없을 때만 '규정에서 확인되지 않습니다. 경영지원팀(내선 1000)에 문의하세요.'라고만 답한다.\n"
+    "5) 마지막 줄에 사용한 근거를 모두 (REG-00 제0조) 형식으로 적는다.\n"
+    "6) 5문장 이내로 간결하게 쓴다."
+)
+PROMPTS = {"v1": SYSTEM_V1, "v2": SYSTEM_V2}
+PROMPT_VERSION = os.environ.get("PROMPT_VERSION", "v2")
+SYSTEM = PROMPTS[PROMPT_VERSION]
 
 def build_prompt(question, results):
     ctx = "\n\n".join(f"[{c['doc_id']} {c['heading']}]\n{c['text']}" for _, c in results)
@@ -41,14 +61,14 @@ def _post(url, payload, headers=None, timeout=60):
 GEMINI_MODELS = ["gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-3.1-flash-lite", "gemini-3.6-flash"]
 LAST_MODEL = None   # 마지막으로 성공한 모델 (개발자 모드 표시용)
 
-def answer(question, results, provider="none", model=None):
+def answer(question, results, provider="none", model=None, prompt_version=None):
     if provider == "none" or not results:
         return None
     prompt = build_prompt(question, results)
     if provider == "ollama":
         out = _post("http://localhost:11434/api/chat", {
             "model": model or "qwen2.5:3b", "stream": False, "options": {"temperature": 0},
-            "messages": [{"role": "system", "content": SYSTEM}, {"role": "user", "content": prompt}]})
+            "messages": [{"role": "system", "content": PROMPTS[prompt_version or PROMPT_VERSION]}, {"role": "user", "content": prompt}]})
         return out["message"]["content"].strip()
     if provider == "gemini":
         key = os.environ.get("GEMINI_API_KEY")
@@ -63,7 +83,7 @@ def answer(question, results, provider="none", model=None):
         for m in candidates:
             try:
                 out = _post(f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent",
-                            {"systemInstruction": {"parts": [{"text": SYSTEM}]},
+                            {"systemInstruction": {"parts": [{"text": PROMPTS[prompt_version or PROMPT_VERSION]}]},
                              "contents": [{"role": "user", "parts": [{"text": prompt}]}],
                              "generationConfig": {"temperature": 0}},
                             headers={"x-goog-api-key": key})

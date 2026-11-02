@@ -92,7 +92,7 @@ if DEV and "eval" in st.session_state:
     st.json(answer_eval.summary(results))
     buf = _io.StringIO(); w = _csv.DictWriter(buf, fieldnames=list(results[0])); w.writeheader(); w.writerows(results)
     st.download_button("결과 CSV 내려받기", buf.getvalue().encode("utf-8-sig"),
-                       file_name=f"answer_eval_{'base50' if '기본' in name else ('holdout_a' if '앞' in name else 'holdout_b')}_{CODE_VERSION}.csv", mime="text/csv")
+                       file_name=f"answer_eval_{'base50' if '기본' in name else ('holdout_a' if '앞' in name else 'holdout_b')}_prompt{results[0].get('지시문','')}_{CODE_VERSION}.csv", mime="text/csv")
     with st.expander("문항별 결과 보기"):
         st.dataframe(results)
 

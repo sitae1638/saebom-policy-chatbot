@@ -82,7 +82,7 @@ def run(set_name, engine, decide, answer, mode, stage, k=3, pace=6.0, progress=N
             text = "(거절) 규정에서 확인되지 않는 내용입니다."
         sc = score_row(r, text if tier != "거절" else text, tier)
         top = res[0][1] if res else {}
-        results.append({"id": r["id"], "분류": r.get("분류", ""), "질문": r["질문"], "정답_핵심": r.get("정답_핵심", ""),
+        results.append({"지시문": llm_answer.PROMPT_VERSION, "id": r["id"], "분류": r.get("분류", ""), "질문": r["질문"], "정답_핵심": r.get("정답_핵심", ""),
                         "근거조항": r.get("근거조항", ""), "답변가능여부": r.get("답변가능여부", "Y"),
                         "판정": tier, "검색1위": f"{top.get('doc_id','')} {top.get('article','')}",
                         "답변": text or "", "오류": err, "모델": llm_answer.LAST_MODEL or "", **sc})
