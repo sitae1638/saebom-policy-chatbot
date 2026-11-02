@@ -9,9 +9,14 @@ MODEL_NAME = "intfloat/multilingual-e5-small"
 
 class EmbedSearch:
     def __init__(self, chunks=None, model_name=MODEL_NAME):
-        from sentence_transformers import SentenceTransformer
+        import sys
+        # AI 모델은 코드 재로딩과 무관하게 한 번만 불러와 재사용 (자동 재시작 시 메모리 증가 방지)
+        _models = sys.__dict__.setdefault("_saebom_models", {})
         self.chunks = chunks or load_chunks()
-        self.model = SentenceTransformer(model_name)
+        if model_name not in _models:
+            from sentence_transformers import SentenceTransformer
+            _models[model_name] = SentenceTransformer(model_name)
+        self.model = _models[model_name]
         texts = ["passage: " + c["doc_title"] + " " + c["heading"] + "\n" + c["text"] for c in self.chunks]
         self.vecs = self.model.encode(texts, normalize_embeddings=True, show_progress_bar=False, batch_size=8)  # 작은 묶음으로 나눠 메모리 최대치 절감
 

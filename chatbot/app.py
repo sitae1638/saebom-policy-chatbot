@@ -5,9 +5,11 @@
  - 개발자 모드: 주소 뒤에 ?dev=1 을 붙이면 왼쪽에 검색 방식·개선 단계·답변 생성 설정과 점수·판정 사유 표시
 답변 생성: Streamlit Secrets(또는 환경변수)에 GEMINI_API_KEY가 있으면 사용자 모드에서 자동으로 gemini 사용
 """
+import importlib
 import os
 import streamlit as st
 import hot_reload
+importlib.reload(hot_reload)   # 자동 재시작 코드 자체의 수정도 매번 반영 (작은 파일이라 부담 없음)
 
 st.set_page_config(page_title="새봄테크 규정 챗봇", page_icon="📘", layout="centered")
 
@@ -19,7 +21,7 @@ def get_engine(mode, stage, version):
 
 
 # 보조 코드가 바뀌었으면 검색 엔진을 비우고 새 코드로 다시 불러옴 (재부팅 불필요) — hot_reload.py 참고
-CODE_VERSION, RELOADED = hot_reload.check_and_reload(get_engine.clear)
+CODE_VERSION, RELOADED, _before = hot_reload.check_and_reload(get_engine.clear)
 from pipeline import STAGES          # 재로딩 뒤에 불러와야 새 코드가 쓰임
 from llm_answer import answer
 import scope_guard as G
@@ -59,6 +61,7 @@ else:
     provider = "gemini" if has_gemini_key() else "none"
 
 engine = get_engine(mode, stage, CODE_VERSION)
+hot_reload.stamp_new(_before)   # 엔진이 불러온 모듈(검색·임베딩 등)까지 지문 표시
 if "history" not in st.session_state:
     st.session_state.history = []
 

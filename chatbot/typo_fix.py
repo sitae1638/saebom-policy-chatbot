@@ -19,14 +19,13 @@ from synonyms import jamo, edit, syl_transposed, cho, RULES
 
 REG_DIR = Path(__file__).resolve().parent.parent / "regulations"
 UNKNOWN_SCORE = -18.0   # 이보다 낮으면 '사전에 없는 단어'로 판단 (정상 단어는 대략 -16 이상)
-_kiwi = None
-
 def kiwi():
-    global _kiwi
-    if _kiwi is None:
+    """Kiwi 분석기는 코드 재로딩과 무관하게 한 번만 불러와 재사용 (자동 재시작 시 메모리 증가 방지)."""
+    import sys
+    if getattr(sys, "_saebom_kiwi", None) is None:
         from kiwipiepy import Kiwi
-        _kiwi = Kiwi()
-    return _kiwi
+        sys._saebom_kiwi = Kiwi()
+    return sys._saebom_kiwi
 
 def _build_vocab():
     vocab = set()
