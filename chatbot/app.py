@@ -23,6 +23,7 @@ CODE_VERSION, RELOADED = hot_reload.check_and_reload(get_engine.clear)
 from pipeline import STAGES          # 재로딩 뒤에 불러와야 새 코드가 쓰임
 from llm_answer import answer
 import scope_guard as G
+import answer_eval
 
 DEV = st.query_params.get("dev") == "1"
 DEFAULT_MODE, DEFAULT_STAGE, DEFAULT_K = "embed", "v4", 3
@@ -49,6 +50,10 @@ if DEV:
         k = st.slider("근거 조항 수", 1, 5, DEFAULT_K)
         show_debug = st.checkbox("확장된 질문·판정 사유 보기", value=True)
         st.caption(f"코드 버전 {CODE_VERSION}" + (" · 방금 새 코드로 다시 불러옴" if RELOADED else ""))
+        with st.expander("📊 답변 평가 (개발용)"):
+            eval_set = st.selectbox("평가셋", list(answer_eval.SETS))
+            eval_pace = st.slider("질문 간격(초, 무료 한도 보호)", 2, 15, 6)
+            run_eval = st.button("평가 실행")
 else:
     mode, stage, k, show_debug = DEFAULT_MODE, DEFAULT_STAGE, DEFAULT_K, False
     provider = "gemini" if has_gemini_key() else "none"
@@ -66,6 +71,27 @@ st.markdown("""<style>
 st.title("📘 새봄테크 규정 챗봇")
 st.caption("근무·휴가·경비·출장·비품·구매·시설·보안 규정을 찾아 근거 조항과 함께 알려드립니다.")
 st.info("이 챗봇은 **연습용 가상 회사(새봄테크)** 의 규정으로 만들어졌습니다. 실제 회사 규정이 아닙니다.", icon="ℹ️")
+
+
+# ---------------- 답변 평가 (개발자 모드) ----------------
+if DEV and run_eval:
+    if not has_gemini_key():
+        st.error("GEMINI_API_KEY가 없어 답변 평가를 할 수 없습니다.")
+    else:
+        bar = st.progress(0.0, text="답변 평가 중...")
+        results = answer_eval.run(eval_set, engine, G.decide, answer, mode, stage, k=k, pace=eval_pace,
+                                  progress=lambda i, n: bar.progress(i / n, text=f"답변 평가 중... {i}/{n}"))
+        st.session_state.eval = (eval_set, results)
+if DEV and "eval" in st.session_state:
+    import csv as _csv, io as _io
+    name, results = st.session_state.eval
+    st.success(f"평가 완료: {name}")
+    st.json(answer_eval.summary(results))
+    buf = _io.StringIO(); w = _csv.DictWriter(buf, fieldnames=list(results[0])); w.writeheader(); w.writerows(results)
+    st.download_button("결과 CSV 내려받기", buf.getvalue().encode("utf-8-sig"),
+                       file_name=f"answer_eval_{'base50' if '기본' in name else 'holdout112'}_{CODE_VERSION}.csv", mime="text/csv")
+    with st.expander("문항별 결과 보기"):
+        st.dataframe(results)
 
 
 # ---------------- 답변 표시 ----------------

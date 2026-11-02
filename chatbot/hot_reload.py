@@ -15,7 +15,7 @@ from pathlib import Path
 
 APP_DIR = Path(__file__).resolve().parent
 RELOAD_ORDER = ["synonyms", "search_engine", "embed_engine", "typo_fix", "granular",
-                "pipeline", "scope_guard", "llm_answer"]   # 앞의 것을 뒤의 것이 불러 씀
+                "pipeline", "scope_guard", "llm_answer", "answer_eval"]   # 앞의 것을 뒤의 것이 불러 씀
 _lock = threading.Lock()
 
 
