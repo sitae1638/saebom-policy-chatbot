@@ -107,10 +107,13 @@ def ask(q):
     if tier != "거절" and provider != "none":
         try:
             text = answer(q, res, provider) or None
+            if DEV and provider == "gemini":
+                import llm_answer
+                why += f" / 답변 모델: {llm_answer.LAST_MODEL}"
         except Exception as e:
             failed = True
             if DEV:
-                why += f" / 답변 생성 실패: {type(e).__name__}: {str(e)[:120]}"
+                why += f" / 답변 생성 실패: {type(e).__name__}: {str(e)[:400]}"
     return (text, res, tier, why, failed)
 
 
