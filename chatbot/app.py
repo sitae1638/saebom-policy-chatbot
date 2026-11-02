@@ -63,7 +63,8 @@ st.info("이 챗봇은 **연습용 가상 회사(새봄테크)** 의 규정으�
 
 # ---------------- 답변 표시 ----------------
 def render(item):
-    text, results, tier, why = item
+    text, results, tier, why = item[:4]
+    llm_failed = len(item) > 4 and item[4]
     if tier == "거절":
         st.markdown("🙅 " + G.MSG["거절"])
         if DEV and results:
@@ -90,20 +91,27 @@ def render(item):
         title = "근거 조항" if i == 0 else "다른 관련 조항"
         with st.expander(f"{title}: {label}", expanded=False):
             st.markdown(c["text"])
+    if llm_failed:
+        st.caption("※ 지금은 답변 문장 생성이 잠시 어려워 규정 원문으로 안내드렸습니다.")
     if DEV:
         st.caption(f"판정: {tier} ({why})")
 
 
 def ask(q):
+    """반환: (답변문장 또는 None, 검색결과, 판정, 사유, 답변생성 실패 여부)
+    답변 문장 생성(LLM)이 실패하면(무료 한도 초과·네트워크 오류 등) 문장 없이 처리 →
+    'LLM을 쓰지 않을 때'와 같은 화면(첫 조항 펼침)에 작은 안내만 덧붙임."""
     res = engine.search(q, k)
     tier, why = G.decide(res, mode, stage)
-    text = None
+    text, failed = None, False
     if tier != "거절" and provider != "none":
         try:
-            text = answer(q, res, provider)
+            text = answer(q, res, provider) or None
         except Exception as e:
-            text = "⚠️ 답변 문장을 만들지 못해 근거 조항만 보여드립니다." + (f" ({type(e).__name__}: {e})" if DEV else "")
-    return (text, res, tier, why)
+            failed = True
+            if DEV:
+                why += f" / 답변 생성 실패: {type(e).__name__}: {str(e)[:120]}"
+    return (text, res, tier, why, failed)
 
 
 # ---------------- 대화 ----------------
