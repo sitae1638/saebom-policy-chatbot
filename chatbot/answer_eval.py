@@ -11,9 +11,10 @@ import csv, re, time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SETS = {
-    "기본50 (개발셋)": "eval_questions.csv",
-    "검증112 (검증셋)": "holdout_questions.csv",
+SETS = {   # 이름: (파일, 시작, 끝) — 한 번에 오래 돌리면 브라우저 연결이 끊길 수 있어 검증셋은 둘로 나눔
+    "기본50 (개발셋)": ("eval_questions.csv", 0, None),
+    "검증112 앞 56 (검증셋)": ("holdout_questions.csv", 0, 56),
+    "검증112 뒤 56 (검증셋)": ("holdout_questions.csv", 56, None),
 }
 UNIT = r"(?:원|영업일|일|시간|개월|년|회|명|%|km|인|대|박스|분|자리)"
 NUM_FACT = re.compile(r"\d[\d,]*(?:\.\d+)?\s*" + UNIT + r"|\d{1,2}:\d{2}")
@@ -52,7 +53,8 @@ def score_row(row, text, tier):
 
 
 def load(set_name):
-    return list(csv.DictReader(open(ROOT / SETS[set_name], encoding="utf-8-sig")))
+    f, a, b = SETS[set_name]
+    return list(csv.DictReader(open(ROOT / f, encoding="utf-8-sig")))[a:b]
 
 
 def run(set_name, engine, decide, answer, mode, stage, k=3, pace=6.0, progress=None):
