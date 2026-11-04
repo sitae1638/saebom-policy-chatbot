@@ -1,7 +1,11 @@
 # Streamlit Community Cloud용 (CPU 전용 PyTorch로 용량 절약)
+# 버전 고정 (2026-11-04): 재부팅 때마다 최신 버전이 새로 설치되면서
+# 브라우저에 남은 예전 화면 파일과 맞지 않아 "Failed to fetch dynamically imported module" 오류가 났음.
+# 아래는 정상 작동을 확인한 조합(Python 3.11 기준). 버전을 올릴 때는 직접 바꾸고 다시 확인할 것.
 --extra-index-url https://download.pytorch.org/whl/cpu
-torch
-sentence-transformers>=3.0
-streamlit>=1.35
-kiwipiepy>=0.20
-numpy
+torch==2.15.0
+sentence-transformers==6.2.0
+transformers==5.22.1
+streamlit==1.66.1
+kiwipiepy==0.24.1
+numpy==2.4.6

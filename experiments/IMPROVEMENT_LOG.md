@@ -391,3 +391,11 @@
 - 시행착오: 질문 말풍선이 가운데 정렬됨 → Streamlit 기본 여백(좌우 auto) 때문, 오른쪽 여백 0으로 해결
 - 제거 불가: 무료 배포 상단 Fork·GitHub 막대, 하단 Streamlit 로고
 - 말풍선 꼬리 추가(사용자 요청: 더 길게): 모서리만 각지게 하던 방식 → 바깥으로 14px 튀어나온 삼각형 꼬리(질문 오른쪽 아래, 답변 왼쪽 아래, 답변 꼬리는 테두리선까지 이어지게 2겹)
+
+## 운영 — 라이브러리 버전 고정 (2026-11-04, 사용자 요청)
+- 증상: 앱 재부팅 후 화면에 "TypeError: Failed to fetch dynamically imported module" 오류, 안내 문구가 `<div class="notice">` HTML 글자 그대로 보임
+- 원인: requirements.txt가 "streamlit>=1.35"처럼 최소 버전만 적혀 있어 재부팅 때마다 최신 버전이 새로 설치됨 → 화면 파일 이름이 바뀌어 브라우저에 남은 예전 파일과 맞지 않음
+- 즉시 조치: 브라우저 강력 새로고침(Ctrl+Shift+R)으로 복구 확인
+- 재발 방지: 정상 작동을 확인한 버전으로 고정 — torch 2.15.0(CPU), sentence-transformers 6.2.0, transformers 5.22.1, streamlit 1.66.1, kiwipiepy 0.24.1, numpy 2.4.6
+- 확인: 서버와 같은 Python 3.11용 설치 파일이 모두 있는지 확인(numpy 2.5는 3.11 미지원이라 2.4.6 선택), 고정 버전으로 로컬 실행해 질문·답변 정상 확인
+- 같은 날 별도 현상(기록만): 서버가 화면 파일 일부에 간헐적으로 502를 반환, 오전에는 앱이 무한 로딩 → Streamlit Community Cloud 쪽 문제로 판단(같은 코드 로컬 정상, 포럼에 유사 신고 다수)
